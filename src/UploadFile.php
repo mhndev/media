@@ -8,7 +8,12 @@
 namespace mhndev\media;
 
 use mhndev\media\Exceptions\ExceedMaxAllowedFileUpload;
+use mhndev\media\Exceptions\InvalidMimeTypeException;
 use mhndev\media\Exceptions\NoFileUploadedException;
+use mhndev\media\Formats\Audio;
+use mhndev\media\Formats\Image;
+use mhndev\media\Formats\Text;
+use mhndev\media\Formats\Video;
 
 /**
  * Class UploadFile
@@ -18,12 +23,12 @@ class UploadFile extends File
 {
 
 
-
     /**
-     * @param $key
+     * @param string $key
+     * @param string $type
      * @throws NoFileUploadedException
      */
-    public static function store($key)
+    public static function store($key, $type)
     {
         if(empty($_FILES) || empty($_FILES[$key])){
             throw new NoFileUploadedException;
@@ -31,24 +36,24 @@ class UploadFile extends File
 
 
         //multiple uploaded files and array
-        if(!empty($_FILES[$key]['name'][0]) && !empty($_FILES[$key]['name'][0]) ){
+        if(is_array($_FILES[$key]['name']) && count($_FILES[$key]['name']) > 1 ){
             $files = self::diverse_array($_FILES[$key]);
 
             foreach ($files as $file){
-                self::storeOne($file, $key);
+                self::storeOne($file, $key, $type);
             }
         }
 
         //file array but single file uploaded
-        elseif (!empty($_FILES[$key]['name'][0]) && empty($_FILES[$key]['name'][0])){
+        elseif (!empty($_FILES[$key]['name'][0]) && empty($_FILES[$key]['name'][1])){
             $files = self::diverse_array($_FILES[$key]);
 
-            self::storeOne($files[0], $key);
+            self::storeOne($files[0], $key, $type);
         }
 
         //single uploaded file
         else{
-            self::storeOne($_FILES, $key);
+            self::storeOne($_FILES[$key], $key, $type);
         }
 
     }
@@ -57,23 +62,24 @@ class UploadFile extends File
     /**
      * @param $file
      * @param $key
+     * @param $type
      * @return string
      * @throws \Exception
      */
-    protected static function storeOne($file, $key)
+    protected static function storeOne($file, $key, $type)
     {
         $extension = self::getFileExtension($file['name']);
 
         $fileName = uniqid(self::generateRandomString() );
 
-        $mimeType = self::getFileMimeType($fileName);
+        $mimeType = self::getFileMimeType($file['tmp_name']);
 
-        $fileSize = $file['size']/1024;
+        $fileSize = $file['size']/(1024 * 1024);
 
-        self::checkFileSize($mimeType, $key, $fileSize);
+        self::checkFileSize($mimeType, $type, $fileSize);
 
         try{
-            $movedFile = self::storagePath($mimeType, $key) . $fileName.'.'.$extension;
+            $movedFile = self::storagePath($mimeType, $type) . DIRECTORY_SEPARATOR .$fileName.'.'.$extension;
 
             move_uploaded_file($file['tmp_name'], $movedFile );
 
@@ -87,13 +93,53 @@ class UploadFile extends File
 
 
     /**
+     *  Return image | audio | video | text
+     * @param string $mimeType
+     * @return string
+     * @throws InvalidMimeTypeException
+     */
+    public static function getFileGeneralType($mimeType)
+    {
+        foreach (Image::getMimeTypes() as $key => $value){
+            if($mimeType == $value){
+                return 'image';
+            }
+        }
+
+        foreach (Audio::getMimeTypes() as $key => $value){
+            if($mimeType == $value){
+                return 'audio';
+            }
+        }
+
+
+        foreach (Video::getMimeTypes() as $key => $value){
+            if($mimeType == $value){
+                return 'video';
+            }
+        }
+
+        foreach (Text::getMimeTypes() as $key => $value){
+
+            if($mimeType == $value){
+                return 'text';
+            }
+        }
+
+
+        throw new InvalidMimeTypeException;
+
+    }
+
+
+    /**
      * Check $_FILES[][name]
      *
      * @param (string) $filename - Uploaded file name.
      * @author Yousef Ismaeil Cliprz
      * @return bool
      */
-    protected function checkFileUploadedName ($filename)
+    protected static function checkFileUploadedName ($filename)
     {
         return (bool) ((preg_match("`^[-0-9A-Z_\.]+$`i",$filename)) ? true : false);
     }
@@ -106,15 +152,21 @@ class UploadFile extends File
      * @author Yousef Ismaeil Cliprz.
      * @return bool
      */
-    protected function check_file_uploaded_length ($filename)
+    protected static function check_file_uploaded_length ($filename)
     {
         return (bool) ((mb_strlen($filename,"UTF-8") > 225) ? true : false);
     }
 
 
-    protected function checkFileSize($mimeType, $key, $fileSize)
+    /**
+     * @param $mimeType
+     * @param $type
+     * @param $fileSize
+     * @throws ExceedMaxAllowedFileUpload
+     */
+    protected static function checkFileSize($mimeType, $type, $fileSize)
     {
-        $maxFileSize = min(self::uploadSizeLimit($mimeType, $key), $this->file_upload_max_size());
+        $maxFileSize = min(self::uploadSizeLimit($mimeType, $type), self::file_upload_max_size());
 
         if($fileSize > $maxFileSize){
             throw new ExceedMaxAllowedFileUpload('Max File Upload Size is '.$maxFileSize.' which you have exceeded it.');
@@ -126,7 +178,7 @@ class UploadFile extends File
      * Returns a file size limit in bytes based on the PHP upload_max_filesize and post_max_size
      * @return float|int
      */
-    protected function file_upload_max_size()
+    protected static function file_upload_max_size()
     {
         static $max_size = -1;
 
@@ -141,14 +193,14 @@ class UploadFile extends File
                 $max_size = $upload_max;
             }
         }
-        return $max_size;
+        return $max_size/(1024*1024);
     }
 
     /**
      * @param $size
      * @return float
      */
-    protected function parse_size($size)
+    protected static function parse_size($size)
     {
         $unit = preg_replace('/[^bkmgtpezy]/i', '', $size); // Remove the non-unit characters from the size.
         $size = preg_replace('/[^0-9\.]/', '', $size); // Remove the non-numeric characters from the size.
@@ -165,23 +217,23 @@ class UploadFile extends File
 
     /**
      * @param $mimeType
-     * @param $key
+     * @param $type
      * @return string
      */
-    public static function storagePath($mimeType, $key)
+    public static function storagePath($mimeType, $type)
     {
-        return self::$config[$mimeType][$key]['storagePath'];
+        return self::$config[self::getFileGeneralType($mimeType)][$type]['storagePath'];
     }
 
 
     /**
      * @param $mimeType
-     * @param $key
+     * @param $type
      * @return mixed
      */
-    public static function uploadSizeLimit($mimeType, $key)
+    public static function uploadSizeLimit($mimeType, $type)
     {
-        return self::$config[$mimeType][$key]['uploadSizeLimit'];
+        return self::$config[self::getFileGeneralType($mimeType)][$type]['uploadSizeLimit'];
     }
 
 
@@ -189,7 +241,7 @@ class UploadFile extends File
      * @param $vector
      * @return array
      */
-    protected function diverse_array($vector)
+    protected static function diverse_array($vector)
     {
         $result = [];
 
@@ -205,7 +257,7 @@ class UploadFile extends File
      * @param int $length
      * @return string
      */
-    protected function generateRandomString($length = 10)
+    protected static function generateRandomString($length = 10)
     {
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $charactersLength = strlen($characters);

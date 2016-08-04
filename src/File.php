@@ -17,18 +17,16 @@ use mhndev\media\Exceptions\FileNotExistException;
 class File
 {
 
-
     /**
      * @var array
      */
     protected static $config;
 
 
-
     /**
      * @param array $config
      */
-    public function config(array $config)
+    public static function config(array $config)
     {
         self::$config = $config;
     }

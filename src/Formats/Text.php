@@ -27,6 +27,7 @@ class Text extends File
             'rtx'                          => 'text/richtext',
             'css'                          => 'text/css',
             'htm|html'                     => 'text/html',
+            'excel'                        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         ];
     }
 }
