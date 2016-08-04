@@ -1,0 +1,35 @@
+{
+  "name": "mhndev/media",
+  "description": "simple media manipulation",
+  "keywords": ["php file", "media", "file manipulation","file upload","image manipulation"],
+  "type": "library",
+  "homepage": "http://github.com/mhndev/media",
+  "license": "BSD Style",
+  "authors": [
+    {
+      "name": "Majid Abdolhosseini",
+      "email": "majid8911303@gmail.com",
+      "homepage": "http://mhndev.com"
+    }
+  ],
+
+  "require": {
+    "php": ">=5.4.0",
+    "intervention/image": "^2.3"
+  },
+
+
+  "autoload": {
+    "psr-4": {
+      "mhndev\\media\\": "src/"
+    }
+  },
+
+  "autoload-dev": {
+    "psr-4": {
+      "mhndev\\media\\":"tests/"
+    }
+  },
+
+  "minimum-stability": "dev"
+}
