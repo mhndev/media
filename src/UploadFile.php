@@ -10,6 +10,7 @@ namespace mhndev\media;
 use mhndev\media\Exceptions\ExceedMaxAllowedFileUpload;
 use mhndev\media\Exceptions\InvalidMimeTypeException;
 use mhndev\media\Exceptions\NoFileUploadedException;
+use mhndev\media\Exceptions\NotEnoughStorageException;
 use mhndev\media\Formats\Audio;
 use mhndev\media\Formats\Image;
 use mhndev\media\Formats\Text;
@@ -40,7 +41,7 @@ class UploadFile extends File
             $files = self::diverse_array($_FILES[$key]);
 
             foreach ($files as $file){
-                self::storeOne($file, $key, $type);
+                self::storeOne($file, $type);
             }
         }
 
@@ -48,12 +49,12 @@ class UploadFile extends File
         elseif (!empty($_FILES[$key]['name'][0]) && empty($_FILES[$key]['name'][1])){
             $files = self::diverse_array($_FILES[$key]);
 
-            self::storeOne($files[0], $key, $type);
+            self::storeOne($files[0], $type);
         }
 
         //single uploaded file
         else{
-            self::storeOne($_FILES[$key], $key, $type);
+            self::storeOne($_FILES[$key], $type);
         }
 
     }
@@ -61,12 +62,11 @@ class UploadFile extends File
 
     /**
      * @param $file
-     * @param $key
      * @param $type
      * @return string
      * @throws \Exception
      */
-    protected static function storeOne($file, $key, $type)
+    protected static function storeOne($file, $type)
     {
         $extension = self::getFileExtension($file['name']);
 
@@ -77,6 +77,14 @@ class UploadFile extends File
         $fileSize = $file['size']/(1024 * 1024);
 
         self::checkFileSize($mimeType, $type, $fileSize);
+
+        $freeSpaceInMg = disk_free_space(self::storagePath($mimeType, $type))/ (1024 * 1024);
+        $minSpace      = self::$config['min_storage'];
+
+        if($freeSpaceInMg - $fileName < $minSpace){
+            throw new NotEnoughStorageException;
+        }
+
 
         try{
             $movedFile = self::storagePath($mimeType, $type) . DIRECTORY_SEPARATOR .$fileName.'.'.$extension;
@@ -94,6 +102,7 @@ class UploadFile extends File
 
     /**
      *  Return image | audio | video | text
+     *
      * @param string $mimeType
      * @return string
      * @throws InvalidMimeTypeException
