@@ -27,10 +27,13 @@ class UploadFile extends File
     /**
      * @param string $key
      * @param string $type
+     * @return array|string
      * @throws NoFileUploadedException
      */
     public static function store($key, $type)
     {
+        $result = [];
+
         if(empty($_FILES) || empty($_FILES[$key])){
             throw new NoFileUploadedException;
         }
@@ -41,20 +44,22 @@ class UploadFile extends File
             $files = self::diverse_array($_FILES[$key]);
 
             foreach ($files as $file){
-                self::storeOne($file, $type);
+                $result[] = self::storeOne($file, $type);
             }
+
+            return $result;
         }
 
         //file array but single file uploaded
         elseif (!empty($_FILES[$key]['name'][0]) && empty($_FILES[$key]['name'][1])){
             $files = self::diverse_array($_FILES[$key]);
 
-            self::storeOne($files[0], $type);
+            return self::storeOne($files[0], $type);
         }
 
         //single uploaded file
         else{
-            self::storeOne($_FILES[$key], $type);
+            return self::storeOne($_FILES[$key], $type);
         }
 
     }
@@ -78,8 +83,10 @@ class UploadFile extends File
 
         self::checkFileSize($mimeType, $type, $fileSize);
 
+
         $freeSpaceInMg = disk_free_space(self::storagePath($mimeType, $type))/ (1024 * 1024);
         $minSpace      = self::$config['min_storage'];
+
 
         if($freeSpaceInMg - $fileName < $minSpace){
             throw new NotEnoughStorageException;
@@ -91,7 +98,12 @@ class UploadFile extends File
 
             move_uploaded_file($file['tmp_name'], $movedFile );
 
-            return $movedFile;
+            return [
+                'path' => $movedFile,
+                'size' => $fileSize,
+                'mime_type' => $mimeType,
+                'file_type' => self::getFileGeneralType($mimeType)
+            ];
 
         }catch(\Exception $e){
 
