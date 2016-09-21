@@ -83,12 +83,11 @@ class UploadFile extends File
 
         self::checkFileSize($mimeType, $type, $fileSize);
 
-
         $freeSpaceInMg = disk_free_space(self::storagePath($mimeType, $type))/ (1024 * 1024);
         $minSpace      = self::$config['min_storage'];
 
 
-        if($freeSpaceInMg - $fileName < $minSpace){
+        if($freeSpaceInMg - $fileSize < $minSpace){
             throw new NotEnoughStorageException;
         }
 
@@ -243,7 +242,7 @@ class UploadFile extends File
      */
     public static function storagePath($mimeType, $type)
     {
-        return self::$config[self::getFileGeneralType($mimeType)][$type]['storagePath'];
+        return self::$config['formats'][self::getFileGeneralType($mimeType)][$type]['storagePath'];
     }
 
 
@@ -254,7 +253,7 @@ class UploadFile extends File
      */
     public static function uploadSizeLimit($mimeType, $type)
     {
-        return self::$config[self::getFileGeneralType($mimeType)][$type]['uploadSizeLimit'];
+        return self::$config['formats'][self::getFileGeneralType($mimeType)][$type]['uploadSizeLimit'];
     }
 
 
