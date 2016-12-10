@@ -154,9 +154,9 @@ class File
      * @param string $type
      * @return string
      */
-    protected function getCacheStoragePath($mimeType, $type)
+    protected static function getCacheStoragePath($mimeType, $type)
     {
-        return self::$config[$mimeType][$type];
+        return self::$config['formats'][$mimeType][$type]['cacheDirectory'];
     }
 
 

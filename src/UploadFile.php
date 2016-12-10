@@ -7,6 +7,7 @@
  */
 namespace mhndev\media;
 
+use mhndev\media\Exceptions\DestinationDirectoryNotExist;
 use mhndev\media\Exceptions\ExceedMaxAllowedFileUpload;
 use mhndev\media\Exceptions\InvalidMimeTypeException;
 use mhndev\media\Exceptions\NoFileUploadedException;
@@ -46,23 +47,25 @@ class UploadFile extends File
             foreach ($files as $file){
                 $result[] = self::storeOne($file, $type);
             }
-
-            return $result;
         }
 
         //file array but single file uploaded
         elseif (!empty($_FILES[$key]['name'][0]) && empty($_FILES[$key]['name'][1])){
             $files = self::diverse_array($_FILES[$key]);
 
-            return self::storeOne($files[0], $type);
+            $result = self::storeOne($files[0], $type);
         }
 
         //single uploaded file
         else{
-            return self::storeOne($_FILES[$key], $type);
+            $result = self::storeOne($_FILES[$key], $type);
         }
 
+
+        return $result;
     }
+
+
 
 
     /**
@@ -83,8 +86,16 @@ class UploadFile extends File
 
         self::checkFileSize($mimeType, $type, $fileSize);
 
-        $freeSpaceInMg = disk_free_space(self::storagePath($mimeType, $type))/ (1024 * 1024);
+        $path = self::storagePath($mimeType, $type);
+
+        if(!is_readable($path)){
+            throw new DestinationDirectoryNotExist(sprintf('path %s is not a valid path', $path));
+        }
+
+        $freeSpaceInMg = disk_free_space($path)/ (1024 * 1024);
         $minSpace      = self::$config['min_storage'];
+
+
 
 
         if($freeSpaceInMg - $fileSize < $minSpace){

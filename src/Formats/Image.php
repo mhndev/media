@@ -23,11 +23,6 @@ class Image extends File
     protected static $manipulator;
 
 
-    public function setManipulator()
-    {
-        self::$manipulator = new ImageManager();
-    }
-
     /**
      * @return array
      */
@@ -44,21 +39,35 @@ class Image extends File
     }
 
 
-    protected function createCache($imagePath, $pathToStoreCache, $width = 200, $height = 200, $imageType)
+    /**
+     * @param $imagePath
+     * @param $pathToStoreCache
+     * @param $imageType
+     * @param int $width
+     * @param int $height
+     * @return string
+     */
+    public static function createCache($imagePath, $pathToStoreCache, $imageType, $width = 200, $height = 200)
     {
-        $filename = $this->getFileNameWithoutExtension($imagePath);
-        $extension = $this->getFileExtension($imagePath);
+        self::$manipulator = new ImageManager();
+
+        $filename = self::getFileNameWithoutExtension($imagePath);
+        $extension = self::getFileExtension($imagePath);
         $cacheName = $filename . "-" . $width . "-" . $height . "." . $extension;
 
         if (!file_exists($pathToStoreCache . $imageType . "/" . $cacheName)) {
-
-            return self::$manipulator->make($imagePath)->resize($width, $height)->save($this->getCacheStoragePath('image', $imageType) . $imageType . "/" . $cacheName)->basePath();
-
+            $result =  self::$manipulator->make($imagePath)->resize($width, $height)->save(self::getCacheStoragePath('image', $imageType) . "/" . $imageType ."/".$cacheName)->basePath();
+        }else{
+            $result = self::getCacheStoragePath('image', $imageType) . "/" . $cacheName;
         }
-        return self::getCacheStoragePath('image', $imageType) . $imageType . "/" . $cacheName;
 
 
+
+
+        return 'files/image/'.$imageType.basename($result);
     }
+
+
 
 
 }
