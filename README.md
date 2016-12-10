@@ -14,34 +14,40 @@ define('TEXT_PATH' , ROOT.DIRECTORY_SEPARATOR.'storage'.DIRECTORY_SEPARATOR.'tex
 
 
 \mhndev\media\UploadFile::config([
-    'image'=>[
-        'avatar'=>[
-            'storagePath'=> IMAGE_PATH.DIRECTORY_SEPARATOR.'avatar',
-            'uploadSizeLimit' => 2,
-        ]
-    ],
-    'audio'=>[
-        'music'=>[
-            'storagePath'=> AUDIO_PATH.DIRECTORY_SEPARATOR.'music',
-            'uploadSizeLimit' => 10
 
+    'min_storage' => 100,
+    
+    'formats'=>[
+        'image'=>[
+            'avatar'=>[
+                'storagePath'=> IMAGE_PATH.DIRECTORY_SEPARATOR.'avatar',
+                'uploadSizeLimit' => 2,
+            ]
         ],
-        'madahi'=>[
-            'storagePath'=> AUDIO_PATH.DIRECTORY_SEPARATOR.'madahi',
-            'uploadSizeLimit' => 4
-
-        ]
-    ],
-    'video'=>[
-        'storagePath'=> VIDEO_PATH,
-        'uploadSizeLimit' => 10
-    ],
-    'text'=>[
-        'license'=>[
-            'storagePath'=> TEXT_PATH.DIRECTORY_SEPARATOR.'license',
-            'uploadSizeLimit' => 1
+        'audio'=>[
+            'music'=>[
+                'storagePath'=> AUDIO_PATH.DIRECTORY_SEPARATOR.'music',
+                'uploadSizeLimit' => 10
+    
+            ],
+            'madahi'=>[
+                'storagePath'=> AUDIO_PATH.DIRECTORY_SEPARATOR.'madahi',
+                'uploadSizeLimit' => 4
+    
+            ]
+        ],
+        'video'=>[
+            'storagePath'=> VIDEO_PATH,
+            'uploadSizeLimit' => 10
+        ],
+        'text'=>[
+            'license'=>[
+                'storagePath'=> TEXT_PATH.DIRECTORY_SEPARATOR.'license',
+                'uploadSizeLimit' => 1
+            ]
         ]
     ]
+
 ]);
 
 
