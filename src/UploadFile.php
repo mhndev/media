@@ -39,7 +39,6 @@ class UploadFile extends File
             throw new NoFileUploadedException;
         }
 
-
         //multiple uploaded files and array
         if(is_array($_FILES[$key]['name']) && count($_FILES[$key]['name']) > 1 ){
             $files = self::diverse_array($_FILES[$key]);

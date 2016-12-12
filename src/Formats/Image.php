@@ -63,8 +63,7 @@ class Image extends File
 
 
 
-
-        return 'files/image/'.$imageType.basename($result);
+        return 'files/image/'.$imageType.'/'.basename($result);
     }
 
 
